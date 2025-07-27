@@ -184,7 +184,7 @@
       } else if (areAdjacent(selectedDot, dot)) {
         const [x1, y1] = selectedDot;
         const [x2, y2] = dot;
-        const newGame = tryAddLine(structuredClone(game), x1, y1, x2, y2);
+        const newGame = tryAddLine(JSON.parse(JSON.stringify(game)), x1, y1, x2, y2);
         await update(gameRef, newGame);
         selectedDot = null;
       } else {
