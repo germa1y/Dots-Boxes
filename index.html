@@ -1,43 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Dots & Boxes Multiplayer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    html, body {
-      margin: 0; padding: 0;
-      background: #f0f0f0;
-      font-family: sans-serif;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    canvas {
-      display: block;
-      margin: auto;
-      background: #fff;
-      touch-action: none;
-    }
-    #info, #score {
-      text-align: center;
-      padding: 8px;
-      font-size: 18px;
-    }
-    #controls {
-      text-align: center;
-      padding: 10px;
-    }
-    #roomInput, #createRoomBtn, #joinRoomBtn {
-      margin: 4px;
-      padding: 6px 10px;
-      font-size: 16px;
-    }
+    html, body { margin:0; padding:0; background:#f0f0f0; font-family:sans-serif; user-select:none; -webkit-tap-highlight-color:transparent; }
+    canvas { display:block; margin:auto; background:#fff; touch-action:none; }
+    #info,#score { text-align:center; padding:8px; font-size:18px; }
+    #controls { text-align:center; padding:10px; }
+    #roomInput,#createRoomBtn,#joinRoomBtn { margin:4px; padding:6px 10px; font-size:16px; }
   </style>
 </head>
 <body>
   <div id="controls">
     <button id="createRoomBtn">Create Room</button>
-    <input id="roomInput" placeholder="Room ID" />
+    <input id="roomInput" placeholder="Room ID"/>
     <button id="joinRoomBtn">Join Room</button>
   </div>
   <div id="info">Not Connected</div>
@@ -46,9 +24,16 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import {
+      getDatabase,
+      ref,
+      onValue,
+      get,
+      set,
+      update
+    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
-    // Firebase configuration
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDeddxmHd2gRtZZBEaEmOqDA8qep9ReUdw",
       authDomain: "dots-n-boxes-9010b.firebaseapp.com",
@@ -57,26 +42,24 @@
       storageBucket: "dots-n-boxes-9010b.appspot.com",
       messagingSenderId: "710830234125",
       appId: "1:710830234125:web:848952644d9842f0761344",
-      measurementId: "G-MEB8ZGSY1"
+      measurementId: "G-MEB8GZGSY1"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const info = document.getElementById("info");
+    const canvas     = document.getElementById("game");
+    const ctx        = canvas.getContext("2d");
+    const info       = document.getElementById("info");
     const scoreDisplay = document.getElementById("score");
-    const createBtn = document.getElementById("createRoomBtn");
-    const joinBtn   = document.getElementById("joinRoomBtn");
-    const roomInput = document.getElementById("roomInput");
+    const createBtn  = document.getElementById("createRoomBtn");
+    const joinBtn    = document.getElementById("joinRoomBtn");
+    const roomInput  = document.getElementById("roomInput");
 
-    const rows = 10, cols = 10;
-    const spacing = canvas.width / cols;
+    const rows      = 10, cols = 10;
+    const spacing   = canvas.width / cols;
     const dotRadius = 4;
 
-    let roomId, playerNumber, gameRef;
-    let selectedDot = null;
+    let roomId, playerNumber, gameRef, selectedDot = null;
 
     function updateScoreUI(game) {
       scoreDisplay.textContent = `P1: ${game.scores[1]}  P2: ${game.scores[2]}`;
@@ -85,37 +68,32 @@
     function draw(game) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw completed squares
+      // squares
       for (let key in game.squares) {
-        const [x, y] = key.split(",").map(Number);
+        const [x,y] = key.split(",").map(Number);
         ctx.fillStyle = game.squares[key] === 1
           ? "rgba(0,0,255,0.3)"
           : "rgba(255,0,0,0.3)";
-        ctx.fillRect(
-          x * spacing + 2,
-          y * spacing + 2,
-          spacing - 4,
-          spacing - 4
-        );
+        ctx.fillRect(x*spacing+2, y*spacing+2, spacing-4, spacing-4);
       }
 
-      // Draw lines
+      // lines
       ctx.lineWidth = 2;
-      ctx.lineCap = "round";
+      ctx.lineCap   = "round";
       for (let key in game.lines) {
-        const [x1, y1, x2, y2] = key.split(",").map(Number);
+        const [x1,y1,x2,y2] = key.split(",").map(Number);
         ctx.beginPath();
-        ctx.moveTo(x1 * spacing, y1 * spacing);
-        ctx.lineTo(x2 * spacing, y2 * spacing);
+        ctx.moveTo(x1*spacing, y1*spacing);
+        ctx.lineTo(x2*spacing, y2*spacing);
         ctx.strokeStyle = game.lines[key] === 1 ? "blue" : "red";
         ctx.stroke();
       }
 
-      // Draw dots
-      for (let y = 0; y <= rows; y++) {
-        for (let x = 0; x <= cols; x++) {
+      // dots
+      for (let y=0; y<=rows; y++) {
+        for (let x=0; x<=cols; x++) {
           ctx.beginPath();
-          ctx.arc(x * spacing, y * spacing, dotRadius, 0, Math.PI * 2);
+          ctx.arc(x*spacing, y*spacing, dotRadius, 0, Math.PI*2);
           if (
             selectedDot &&
             selectedDot[0] === x &&
@@ -130,81 +108,85 @@
       }
     }
 
-    function keyForLine(x1, y1, x2, y2) {
-      return (x1 < x2 || (x1 === x2 && y1 < y2))
+    function keyForLine(x1,y1,x2,y2) {
+      return (x1<x2 || (x1===x2 && y1<y2))
         ? `${x1},${y1},${x2},${y2}`
         : `${x2},${y2},${x1},${y1}`;
     }
 
-    function getDotAt(px, py) {
-      for (let gy = 0; gy <= rows; gy++) {
-        for (let gx = 0; gx <= cols; gx++) {
-          const dx = gx * spacing - px;
-          const dy = gy * spacing - py;
-          if (Math.hypot(dx, dy) < spacing * 0.3) {
-            return [gx, gy];
-          }
+    function getDotAt(px,py) {
+      for (let gy=0; gy<=rows; gy++) {
+        for (let gx=0; gx<=cols; gx++) {
+          const dx = gx*spacing - px;
+          const dy = gy*spacing - py;
+          if (Math.hypot(dx,dy) < spacing*0.3) return [gx,gy];
         }
       }
       return null;
     }
 
-    function areAdjacent([x1, y1], [x2, y2]) {
-      return (
-        (Math.abs(x1 - x2) === 1 && y1 === y2) ||
-        (Math.abs(y1 - y2) === 1 && x1 === x2)
-      );
+    function areAdjacent([x1,y1],[x2,y2]) {
+      return (Math.abs(x1-x2)===1 && y1===y2)
+          || (Math.abs(y1-y2)===1 && x1===x2);
     }
 
-    function tryAddLine(game, x1, y1, x2, y2) {
-      const lineKey = keyForLine(x1, y1, x2, y2);
-      if (game.lines[lineKey]) return game;
+    // Apply move, return the new lineKey + any claimed squares
+    function applyMove(game, x1,y1,x2,y2) {
+      const lineKey = keyForLine(x1,y1,x2,y2);
+      if (game.lines[lineKey]) return null;
       game.lines[lineKey] = playerNumber;
 
-      let claimed = false;
+      const claimed = [];
       const checks = [];
-
-      if (x1 !== x2) {
-        if (y1 > 0)    checks.push([Math.min(x1, x2), y1 - 1]);
-        if (y1 < rows) checks.push([Math.min(x1, x2), y1]);
+      if (x1!==x2) {
+        if (y1>0)    checks.push([Math.min(x1,x2), y1-1]);
+        if (y1<rows) checks.push([Math.min(x1,x2), y1]);
       } else {
-        if (x1 > 0)    checks.push([x1 - 1, Math.min(y1, y2)]);
-        if (x1 < cols) checks.push([x1,     Math.min(y1, y2)]);
+        if (x1>0)    checks.push([x1-1, Math.min(y1,y2)]);
+        if (x1<cols) checks.push([x1,   Math.min(y1,y2)]);
       }
-
-      for (let [sx, sy] of checks) {
+      for (let [sx,sy] of checks) {
         const edges = [
           keyForLine(sx,   sy,   sx+1, sy),
           keyForLine(sx,   sy+1, sx+1, sy+1),
           keyForLine(sx,   sy,   sx,   sy+1),
-          keyForLine(sx+1, sy,   sx+1, sy+1),
+          keyForLine(sx+1, sy,   sx+1, sy+1)
         ];
         if (edges.every(k => game.lines[k])) {
-          game.squares[`${sx},${sy}`] = playerNumber;
+          const sqKey = `${sx},${sy}`;
+          game.squares[sqKey] = playerNumber;
           game.scores[playerNumber]++;
-          claimed = true;
+          claimed.push(sqKey);
         }
       }
 
-      if (!claimed) {
+      if (claimed.length === 0) {
         game.currentPlayer = 3 - playerNumber;
       }
-      return game;
+      return { lineKey: lineKey, claimedSquares: claimed };
     }
 
-    // Handle taps
+    // Handle taps and patch only the changed fields
     canvas.addEventListener("pointerdown", async e => {
       e.preventDefault();
-      if (!gameRef || playerNumber == null) return;
+      if (!gameRef) return;
 
       const snap = await get(gameRef);
-      const game = snap.val();
-      if (!game || game.currentPlayer !== playerNumber) return;
+      const raw  = snap.val();
+      if (!raw) return;
+
+      const game = {
+        lines:         raw.lines   || {},
+        squares:       raw.squares || {},
+        scores:        raw.scores  || {1:0,2:0},
+        currentPlayer: raw.currentPlayer || 1
+      };
+      if (game.currentPlayer !== playerNumber) return;
 
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const dot = getDotAt(x, y);
+      const dot = getDotAt(x,y);
       if (!dot) return;
 
       if (!selectedDot) {
@@ -213,47 +195,57 @@
         return;
       }
 
-      const [x1, y1] = selectedDot;
-      const [x2, y2] = dot;
-
-      if ((x1 === x2 && y1 === y2) || !areAdjacent(selectedDot, dot)) {
+      const [x1,y1] = selectedDot;
+      const [x2,y2] = dot;
+      if ((x1===x2 && y1===y2) || !areAdjacent(selectedDot,dot)) {
         selectedDot = dot;
         draw(game);
         return;
       }
 
-      // valid line placement
       selectedDot = null;
-      const newGame = tryAddLine(
-        JSON.parse(JSON.stringify(game)),
-        x1, y1, x2, y2
-      );
-      updateScoreUI(newGame);
-      draw(newGame);
-      await set(gameRef, newGame);
+      const move = applyMove(game, x1,y1,x2,y2);
+      if (!move) return;
+
+      // immediate local draw
+      updateScoreUI(game);
+      draw(game);
+
+      // patch only changed fields
+      const updates = {};
+      updates[`lines/${move.lineKey}`] = playerNumber;
+      move.claimedSquares.forEach(sq => {
+        updates[`squares/${sq}`] = playerNumber;
+      });
+      updates[`scores/${playerNumber}`] = game.scores[playerNumber];
+      updates["currentPlayer"] = game.currentPlayer;
+
+      await update(gameRef, updates);
     });
 
-    // Create a new room
+    // Create room
     createBtn.addEventListener("click", async () => {
-      roomId = Math.random().toString(36).slice(2, 8);
+      roomId = Math.random().toString(36).slice(2,8);
       playerNumber = 1;
       gameRef = ref(db, `games/${roomId}`);
       await set(gameRef, {
-        lines: {},
-        squares: {},
-        scores: {1: 0, 2: 0},
-        currentPlayer: 1
+        lines: {}, squares: {}, scores: {1:0,2:0}, currentPlayer: 1
       });
       info.textContent = `Room: ${roomId} (You are P1)`;
       onValue(gameRef, snap => {
-        const gm = snap.val();
-        if (!gm) return;
-        updateScoreUI(gm);
-        draw(gm);
+        const raw = snap.val() || {};
+        const game = {
+          lines:         raw.lines   || {},
+          squares:       raw.squares || {},
+          scores:        raw.scores  || {1:0,2:0},
+          currentPlayer: raw.currentPlayer || 1
+        };
+        updateScoreUI(game);
+        draw(game);
       });
     });
 
-    // Join an existing room
+    // Join room
     joinBtn.addEventListener("click", async () => {
       const id = roomInput.value.trim();
       if (!id) return;
@@ -267,10 +259,15 @@
       playerNumber = 2;
       info.textContent = `Joined ${roomId} (You are P2)`;
       onValue(gameRef, snap => {
-        const gm = snap.val();
-        if (!gm) return;
-        updateScoreUI(gm);
-        draw(gm);
+        const raw = snap.val() || {};
+        const game = {
+          lines:         raw.lines   || {},
+          squares:       raw.squares || {},
+          scores:        raw.scores  || {1:0,2:0},
+          currentPlayer: raw.currentPlayer || 1
+        };
+        updateScoreUI(game);
+        draw(game);
       });
     });
   </script>
