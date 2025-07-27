@@ -43,7 +43,7 @@
   </div>
   <div id="info">Not Connected</div>
   <div id="score">P1: 0  P2: 0</div>
-  <canvas id="game" width="360" height="360"></canvas>
+  <canvas id="game" width="440" height="440"></canvas>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
@@ -88,7 +88,7 @@
     for (let key in game.squares) {
       const [x, y] = key.split(",").map(Number);
       ctx.fillStyle = game.squares[key] === 1 ? "rgba(0,0,255,0.3)" : "rgba(255,0,0,0.3)";
-      ctx.fillRect(x * spacing + 4, y * spacing + 4, spacing - 8, spacing - 8);
+      ctx.fillRect(x * spacing + 2, y * spacing + 2, spacing - 4, spacing - 4);
     }
     for (let key in game.lines) {
       const [x1, y1, x2, y2] = key.split(",").map(Number);
@@ -96,7 +96,7 @@
       ctx.moveTo(x1 * spacing, y1 * spacing);
       ctx.lineTo(x2 * spacing, y2 * spacing);
       ctx.strokeStyle = game.lines[key] === 1 ? "blue" : "red";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 2;
       ctx.stroke();
     }
     for (let y = 0; y <= rows; y++) {
@@ -164,11 +164,11 @@
     return game;
   }
 
-  canvas.addEventListener("click", async e => {
+  canvas.addEventListener("click", async (e) => {
     if (!gameRef || playerNumber == null) return;
     const snap = await get(gameRef);
     const game = snap.val();
-    if (game.currentPlayer !== playerNumber) return;
+    if (!game || game.currentPlayer !== playerNumber) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -178,20 +178,28 @@
 
     if (!selectedDot) {
       selectedDot = dot;
-    } else {
-      if (dot[0] === selectedDot[0] && dot[1] === selectedDot[1]) {
-        selectedDot = null;
-      } else if (areAdjacent(selectedDot, dot)) {
-        const [x1, y1] = selectedDot;
-        const [x2, y2] = dot;
-        const newGame = tryAddLine(JSON.parse(JSON.stringify(game)), x1, y1, x2, y2);
-        await update(gameRef, newGame);
-        selectedDot = null;
-      } else {
-        selectedDot = dot;
-      }
+      draw(game);
+      return;
     }
-    draw(game);
+
+    if (dot[0] === selectedDot[0] && dot[1] === selectedDot[1]) {
+      selectedDot = null;
+      draw(game);
+      return;
+    }
+
+    if (!areAdjacent(selectedDot, dot)) {
+      selectedDot = dot;
+      draw(game);
+      return;
+    }
+
+    const [x1, y1] = selectedDot;
+    const [x2, y2] = dot;
+    selectedDot = null;
+
+    const newGame = tryAddLine(JSON.parse(JSON.stringify(game)), x1, y1, x2, y2);
+    await set(gameRef, newGame);
   });
 
   createBtn.onclick = async () => {
