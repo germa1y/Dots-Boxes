@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dots & Boxes - Multiplayer</title>
+  <meta charset="UTF-8">
+  <title>Dots & Boxes Multiplayer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
@@ -35,26 +36,25 @@
   </style>
 </head>
 <body>
-<div id="controls">
-  <button id="createRoomBtn">Create Room</button>
-  <input id="roomInput" placeholder="Room ID" />
-  <button id="joinRoomBtn">Join Room</button>
-</div>
-<div id="info">Not Connected</div>
-<div id="score">P1: 0  P2: 0</div>
-<canvas id="game" width="360" height="360"></canvas>
+  <div id="controls">
+    <button id="createRoomBtn">Create Room</button>
+    <input id="roomInput" placeholder="Room ID" />
+    <button id="joinRoomBtn">Join Room</button>
+  </div>
+  <div id="info">Not Connected</div>
+  <div id="score">P1: 0  P2: 0</div>
+  <canvas id="game" width="360" height="360"></canvas>
 
-<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, update, get, child } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+  import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDeddxmHd2gRtZZBEaEmOqDA8qep9ReUdw",
     authDomain: "dots-n-boxes-9010b.firebaseapp.com",
     databaseURL: "https://dots-n-boxes-9010b-default-rtdb.firebaseio.com",
     projectId: "dots-n-boxes-9010b",
-    storageBucket: "dots-n-boxes-9010b.firebasestorage.app",
+    storageBucket: "dots-n-boxes-9010b.appspot.com",
     messagingSenderId: "710830234125",
     appId: "1:710830234125:web:848952644d9842f0761344",
     measurementId: "G-MEB8GZGSY1"
@@ -73,9 +73,9 @@
 
   const rows = 10, cols = 10;
   const spacing = canvas.width / cols;
-  const dotRadius = 5;
+  const dotRadius = 4;
   let roomId = null;
-  let playerNumber = null; // 1 or 2
+  let playerNumber = null;
   let gameRef = null;
   let selectedDot = null;
 
